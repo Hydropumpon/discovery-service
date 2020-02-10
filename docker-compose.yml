@@ -2,6 +2,19 @@ version: "3.7"
 
 services:
 
+  tracer:
+    image: jaegertracing/all-in-one
+    ports:
+      - 5775:5775/udp
+      - 6831:6831/udp
+      - 6832:6832/udp
+      - 5778:5778
+      - 16686:16686
+      - 14268:14268
+      - 14250:14250
+      - 9411:9411
+
+
   db-catalogue:
     image: postgres:12.1-alpine
     restart: always
@@ -10,7 +23,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: catalogue
     volumes:
-      - /var/lib/postgresql/data/order
+      - /var/lib/postgresql/catalogue
     expose:
       - 5432
     ports:
@@ -44,6 +57,7 @@ services:
     restart: on-failure
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      JAEGER_AGENT_HOST: tracer
       SPRING_RABBITMQ_HOST : rabbit
       SPRING_DATASOURCE_URL: jdbc:p6spy:postgresql://db-catalogue:5432/catalogue
     expose:
@@ -52,12 +66,14 @@ services:
       - db-catalogue
       - rabbit
       - eureka-server
+      - tracer
     ports:
       - 8081:8081
     links:
       - db-catalogue
       - rabbit
       - eureka-server
+      - tracer
 
   order:
     image: order:1
@@ -66,24 +82,27 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
       SPRING_RABBITMQ_HOST : rabbit
       SPRING_DATASOURCE_URL: jdbc:postgresql://db-order:5432/orders
+      JAEGER_AGENT_HOST: tracer
     expose:
       - 8082
     depends_on:
       - db-order
       - rabbit
       - eureka-server
+      - tracer
     ports:
       - 8082:8082
     links:
       - eureka-server
       - db-order
       - rabbit
+      - tracer
 
   db-order:
     image: postgres:12.1-alpine
     restart: always
     volumes:
-      - /var/lib/postgresql/data/order
+      - /var/lib/postgresql/order
     environment:
       POSTGRES_PASSWORD: coolgame
       POSTGRES_USER: postgres
