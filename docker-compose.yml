@@ -38,6 +38,7 @@ services:
       - 5433:5432
   rabbit:
     image: rabbitmq:3.8.2-management-alpine
+    restart: on-failure
     environment:
       RABBITMQ_PASSWORD : guest
       RABBITMQ_USERNAME: guest
@@ -51,7 +52,7 @@ services:
       - 15672:15672
   admin:
     image: adminer
-    restart: always
+    restart: on-failure
     ports:
     - 8080:8080
     depends_on:
@@ -116,7 +117,7 @@ services:
       - 5432:5432
   eureka-server:
     image: discovery:1
-    restart: always
+    restart: on-failure
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     expose:
